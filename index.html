@@ -422,7 +422,7 @@
         var trail = [];
         var petals2 = [];
         var TRAIL_LENGTH = 600, SPAWN_RATE = 0.06, PETAL_LIFE = 700, SPARK_SPEED = 0.0018;
-        var PETAL_MAX = (window.innerWidth < 700) ? 200 : 550;   // 手机降载
+        var PETAL_MAX = (window.innerWidth < 700) ? 600 : 1600;   // 手机降载
 
         function buildHeartPath() {
             outW = outCv.width = window.innerWidth;
@@ -627,30 +627,24 @@
                 octx.arc(pt.x - 2, pt.y - 2, 3, 0, 6.28);
                 octx.fill();
             }
-            // 持续花瓣生成器：不依赖流星轨迹，每帧从心形轨迹随机位置撒花，保证花瓣一直存在
-            var spawnCount = (window.innerWidth < 700) ? 1 : 3;
-            for (var i5 = 0; i5 < spawnCount; i5++) {
-                if (petals2.length < PETAL_MAX && heartPts.length) {
-                    var rp = heartPts[Math.floor(Math.random() * heartPts.length)];
-                    spawnPetal(rp, rp.x - outCX, rp.y - outCY);
-                }
-            }
-            // 花瓣
+            // 花瓣全部来自流星拖尾（跟着爱心画的时候甩出），复刻原版逻辑
             for (var i4 = petals2.length - 1; i4 >= 0; i4--) {
                 var p4 = petals2[i4];
-                p4.vx *= 0.982;   // 阻力：花瓣减速漂浮在爱心周围，不会一闪冲出屏幕
-                p4.vy *= 0.982;
                 p4.x += p4.vx;
                 p4.y += p4.vy;
                 p4.angle += p4.asp;
-                if (--p4.life <= 0) { petals2.splice(i4, 1); continue; }
+                if (--p4.life <= 0 ||
+                    p4.x < -80 || p4.x > outW + 80 || p4.y < -80 || p4.y > outH + 80) {
+                    petals2.splice(i4, 1);
+                    continue;
+                }
                 octx.globalAlpha = p4.life / PETAL_LIFE;
-                octx.save();
-                octx.translate(p4.x, p4.y);
-                octx.rotate(p4.angle * Math.PI / 180);
+                var rad4 = p4.angle * Math.PI / 180;
+                var cs4 = Math.cos(rad4), sn4 = Math.sin(rad4);
+                octx.setTransform(cs4, sn4, -sn4, cs4, p4.x, p4.y);
                 octx.drawImage(p4.img, -p4.img.width / 2, -p4.img.height / 2);
-                octx.restore();
             }
+            octx.setTransform(1, 0, 0, 1, 0, 0);
             octx.globalAlpha = 1;
             requestAnimationFrame(drawOuter);
         }
