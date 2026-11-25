@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>💗 99 祝福 · 爱心字幕雨 💗</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <style>
+        html, body {
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            background: rgb(0, 0, 0);
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        /* 爱心粒子层：心跳缩放 */
+        #pinkboard {
+            animation: anim 1.5s ease-in-out infinite;
+            -webkit-animation: anim 1.5s ease-in-out infinite;
+        }
+        @keyframes anim {
+            0%   { transform: scale(0.8); }
+            25%  { transform: scale(0.7); }
+            50%  { transform: scale(1); }
+            75%  { transform: scale(0.7); }
+            100% { transform: scale(0.8); }
+        }
+        /* 中央文字 */
+        #child {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+            max-width: 92vw;
+            text-align: center;
+        }
+        h4 {
+            font-family: "STKaiti", "Kaiti SC", "楷体", serif;
+            font-size: clamp(26px, 7vw, 42px);
+            color: #f584b7;
+            white-space: nowrap;
+            max-width: 92vw;
+            overflow: hidden;
+            text-shadow: 0 0 16px rgba(245, 132, 183, .8);
+            animation: glow 2.4s ease-in-out infinite;
+        }
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 16px rgba(245,132,183,.8); }
+            50%      { text-shadow: 0 0 30px rgba(245,132,183,1); }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="star"></canvas>        <!-- 最底层：模拟星空 -->
+    <canvas id="canvas"></canvas>      <!-- 黑客文字雨 -->
+    <canvas id="txtcv"></canvas>       <!-- 99 祝福字幕云 -->
+    <canvas id="pinkboard"></canvas>   <!-- 中心爱心粒子 + 心跳 -->
+    <canvas id="outer"></canvas>       <!-- 最外围：全屏爱心流星光迹 + 花瓣 -->
+    <!-- 中央文字：改这里 ↓ -->
+    <div id="child">
+        <h4>💗我永远为你着迷💗</h4>
+    </div>
+
+    <script type="text/javascript">
+        /* =============== 配置区 =============== */
+        var RAIN_CHARS = 'I LOVE U'.split('');   // 代码雨字符
+        var CENTER_TEXT = '💗我永远为你着迷💗';  // 中央文字
+        /* 99 条祝福语 ↓ 想改就改，保持 99 条效果最佳 */
+        var BLESSINGS = [
+            '万事胜意 平安喜乐', '你是我永远的偏爱', '愿所有美好如约而至', '我永远为你着迷',
+            '往后余生都是你', '你笑起来像好天气', '今晚月色真美', '想和你去看日出日落',
+            '爱你不止三百六十五天', '你是我藏在心底的糖', '遇见你是我最大的幸运', '愿你被世界温柔以待',
+            '山河远阔 人间烟火', '无一是你 无一不是你', '春风十里 不如你', '愿你眼里有光 心中有爱',
+            '日日是好日', '岁岁常欢愉 年年皆胜意', '未来的路我们一起走', '你是我心中的一束光',
+            '把所有的温柔都给你', '想牵你的手走过四季', '你是人间理想', '愿你三餐四季 皆有欢喜',
+            '我们都要好好的', '好运正在向你奔来', '愿你所求皆如愿', '生活明朗 万物可爱',
+            '你比星光更闪耀', '每天都要开心呀', '愿你梦里都是甜的', '一起变老吧',
+            '想把星星摘给你', '你是我未完成的诗', '愿岁月温柔 待你如初', '我的世界都是你',
+            '你在时 你就是一切', '愿所有好运都追着你跑', '平安喜乐 得偿所愿', '想和你吹晚风看星星',
+            '你是我猝不及防的心动', '愿你前程似锦', '桃花朵朵开 好运滚滚来', '愿你四季平安',
+            '你是我的小确幸', '愿时光不老 我们不散', '心之所向 皆是晴天', '想把全世界最好的给你',
+            '你一出现 满眼都是光', '愿你所行皆坦途', '永远热泪盈眶 永远热爱生活', '你的名字是我最长情的告白',
+            '愿你被偏爱 有恃无恐', '遇见你 花都开了', '愿你晚上有好梦 白天有好心情', '我们的故事未完待续',
+            '你是年少的欢喜也是余生', '愿你天天都有好运气', '想陪你从新鲜感走到归属感', '你是我的限量版快乐',
+            '愿你笑口常开', '世界很大 幸好有你', '想和你把日子过成诗', '愿平安健康伴随你左右',
+            '你是我独家的记忆', '愿你光芒万丈', '想和你看遍人间烟火', '愿你所遇皆良人',
+            '你是宇宙安排的邂逅', '愿所有惊喜都接踵而至', '陪你熬过所有苦难', '你是我的解药',
+            '愿你一生被爱', '想和你在冬天里围着火炉', '你是我藏在云朵里的想念', '愿你追风赶月不停留',
+            '我们的明天会更好', '你是我平淡日子里的星辰', '愿你所有的努力都有回报', '想把晚霞摘下来送你',
+            '你是我的四叶草', '愿你永远少年', '想陪你走过每个春夏秋冬', '你是我的专属浪漫',
+            '愿你眼里长着太阳', '想和你从心动到古稀', '你是我心上的春天', '愿你福气满满',
+            '想给你一场盛大的告白', '你是我最想留住的幸运', '愿你日日欢喜 事事顺遂', '想和你一起慢慢变老',
+            '你是我心动的开始', '愿你被世界温柔拥抱', '想和你数遍满天星光', '你是我永不变卦的喜欢',
+            '愿前程似锦 来日方长', '想和你看每一次潮起潮落', '长长久久 爱你久久'
+        ];
+
+        /* =============== 第一层：黑客帝国粉色文字雨 =============== */
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.height = window.innerHeight;
+        canvas.width = window.innerWidth;
+
+        var fontSize = 16;
+        var columns = canvas.width / fontSize;
+        var drops = [];
+        for (var x = 0; x < columns; x++) drops[x] = 1;
+
+        function drawRain() {
+            // 擦除式拖尾：保持画布透明，让星空透出来
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = '#f584b7';
+            ctx.font = fontSize + 'px arial';
+            for (var i = 0; i < drops.length; i++) {
+                var text = RAIN_CHARS[Math.floor(Math.random() * RAIN_CHARS.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height || Math.random() > 0.95) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawRain, 33);
+
+        /* =============== 第二层：99 祝福字幕云 =============== */
+        var colors = [
+            '#eec996', '#8fb7d3', '#b7d4c6', '#c3bedd', '#f1d5e4', '#cae1d3',
+            '#f3c89d', '#d0b0c3', '#819d53', '#c99294', '#cec884', '#ff8e70',
+            '#e0a111', '#fffdf6', '#cbd7ac', '#e8c6c0', '#dc9898', '#ecc8ba'
+        ];
+        var txtcv = document.getElementById('txtcv');
+        var tctx = txtcv.getContext('2d');
+        var ww = window.innerWidth, wh = window.innerHeight;
+        var hearts = [];
+
+        function initSubtitles() {
+            txtcv.width = ww;
+            txtcv.height = wh;
+            hearts = [];
+            for (var i = 0; i < 99; i++) hearts.push(new SubText(i));
+        }
+
+        function SubText(i) {
+            this.x = Math.random() * ww;
+            this.y = Math.random() * wh;
+            this.opacity = Math.random() * 0.5 + 0.5;
+            this.vel = {
+                x: (Math.random() - 0.5) * 4,
+                y: (Math.random() - 0.5) * 4,
+            };
+            this.targetScale = Math.random() * 0.15 + 0.02;
+            this.scale = this.targetScale * Math.random();
+            this.text = BLESSINGS[i % BLESSINGS.length];   // 99 条祝福轮转
+            this.width = Math.min(473.8, ww * 0.55);       // 手机屏自动收窄
+            this.height = 408.6;
+        }
+        SubText.prototype.update = function () {
+            this.x += this.vel.x;
+            this.y += this.vel.y;
+            this.scale += (this.targetScale - this.scale) * 0.01;
+            if (this.x - this.width > ww || this.x + this.width < 0) {
+                this.scale = 0;
+                this.x = Math.random() * ww;
+            }
+            if (this.y - this.height > wh || this.y + this.height < 0) {
+                this.scale = 0;
+                this.y = Math.random() * wh;
+            }
+        };
+        SubText.prototype.draw = function (i) {
+            tctx.globalAlpha = this.opacity;
+            tctx.font = (180 * this.scale) + 'px "微软雅黑"';
+            tctx.fillStyle = colors[i % colors.length];
+            tctx.fillText(this.text, this.x - this.width * 0.5, this.y - this.height * 0.5, this.width, this.height);
+        };
+
+        function renderSubtitles() {
+            tctx.clearRect(0, 0, ww, wh);
+            for (var i = 0; i < hearts.length; i++) {
+                hearts[i].update();
+                hearts[i].draw(i);
+            }
+            requestAnimationFrame(renderSubtitles);
+        }
+        initSubtitles();
+        renderSubtitles();
+
+        window.addEventListener('resize', function () {
+            ww = window.innerWidth;
+            wh = window.innerHeight;
+            canvas.height = wh; canvas.width = ww;
+            initSubtitles();
+        });
+
+        /* =============== 第三层：爱心粒子喷发 + 心跳 =============== */
+        var settings = {
+            particles: {
+                length: 500,
+                duration: 2,
+                velocity: 100,
+                effect: -0.75,
+                size: 30,
+            },
+        };
+
+        var Point = (function () {
+            function Point(x, y) {
+                this.x = (typeof x !== 'undefined') ? x : 0;
+                this.y = (typeof y !== 'undefined') ? y : 0;
+            }
+            Point.prototype.clone = function () { return new Point(this.x, this.y); };
+            Point.prototype.length = function (length) {
+                if (typeof length == 'undefined')
+                    return Math.sqrt(this.x * this.x + this.y * this.y);
+                this.normalize();
+                this.x *= length;
+                this.y *= length;
+                return this;
+            };
+            Point.prototype.normalize = function () {
+                var length = this.length();
+                this.x /= length;
+                this.y /= length;
+                return this;
+            };
+            return Point;
+        })();
+
+        var Particle = (function () {
+            function Particle() {
+                this.position = new Point();
+                this.velocity = new Point();
+                this.acceleration = new Point();
+                this.age = 0;
+            }
+            Particle.prototype.initialize = function (x, y, dx, dy) {
+                this.position.x = x;
+                this.position.y = y;
+                this.velocity.x = dx;
+                this.velocity.y = dy;
+                this.acceleration.x = dx * settings.particles.effect;
+                this.acceleration.y = dy * settings.particles.effect;
+                this.age = 0;
+            };
+            Particle.prototype.update = function (deltaTime) {
+                this.position.x += this.velocity.x * deltaTime;
+                this.position.y += this.velocity.y * deltaTime;
+                this.velocity.x += this.acceleration.x * deltaTime;
+                this.velocity.y += this.acceleration.y * deltaTime;
+                this.age += deltaTime;
+            };
+            Particle.prototype.draw = function (context, image) {
+                function ease(t) { return (--t) * t * t + 1; }
+                var size = image.width * ease(this.age / settings.particles.duration);
+                context.globalAlpha = 1 - this.age / settings.particles.duration;
+                context.drawImage(image, this.position.x - size / 2, this.position.y - size / 2, size, size);
+            };
+            return Particle;
+        })();
+
+        var ParticlePool = (function () {
+            var particles, firstActive = 0, firstFree = 0,
+                duration = settings.particles.duration;
+            function ParticlePool(length) {
+                particles = new Array(length);
+                for (var i = 0; i < particles.length; i++)
+                    particles[i] = new Particle();
+            }
+            ParticlePool.prototype.add = function (x, y, dx, dy) {
+                particles[firstFree].initialize(x, y, dx, dy);
+                firstFree++;
+                if (firstFree == particles.length) firstFree = 0;
+                if (firstActive == firstFree) firstActive++;
+                if (firstActive == particles.length) firstActive = 0;
+            };
+            ParticlePool.prototype.update = function (deltaTime) {
+                var i;
+                if (firstActive < firstFree) {
+                    for (i = firstActive; i < firstFree; i++) particles[i].update(deltaTime);
+                }
+                if (firstFree < firstActive) {
+                    for (i = firstActive; i < particles.length; i++) particles[i].update(deltaTime);
+                    for (i = 0; i < firstFree; i++) particles[i].update(deltaTime);
+                }
+                while (particles[firstActive].age >= duration && firstActive != firstFree) {
+                    firstActive++;
+                    if (firstActive == particles.length) firstActive = 0;
+                }
+            };
+            ParticlePool.prototype.draw = function (context, image) {
+                if (firstActive < firstFree) {
+                    for (i = firstActive; i < firstFree; i++) particles[i].draw(context, image);
+                }
+                if (firstFree < firstActive) {
+                    for (i = firstActive; i < particles.length; i++) particles[i].draw(context, image);
+                    for (i = 0; i < firstFree; i++) particles[i].draw(context, image);
+                }
+            };
+            return ParticlePool;
+        })();
+
+        (function (canvas) {
+            var context = canvas.getContext('2d'),
+                particles = new ParticlePool(settings.particles.length),
+                particleRate = settings.particles.length / settings.particles.duration,
+                time;
+
+            function pointOnHeart(t) {
+                return new Point(
+                    160 * Math.pow(Math.sin(t), 3),
+                    130 * Math.cos(t) - 50 * Math.cos(2 * t) - 20 * Math.cos(3 * t) - 10 * Math.cos(4 * t) + 25
+                );
+            }
+
+            var image = (function () {
+                var canvas = document.createElement('canvas'),
+                    context = canvas.getContext('2d');
+                canvas.width = settings.particles.size;
+                canvas.height = settings.particles.size;
+                function to(t) {
+                    var point = pointOnHeart(t);
+                    point.x = settings.particles.size / 2 + point.x * settings.particles.size / 350;
+                    point.y = settings.particles.size / 2 - point.y * settings.particles.size / 350;
+                    return point;
+                }
+                context.beginPath();
+                var t = -Math.PI;
+                var point = to(t);
+                context.moveTo(point.x, point.y);
+                while (t < Math.PI) {
+                    t += 0.01;
+                    point = to(t);
+                    context.lineTo(point.x, point.y);
+                }
+                context.closePath();
+                context.fillStyle = '#ea80b0';
+                context.fill();
+                var image = new Image();
+                image.src = canvas.toDataURL();
+                return image;
+            })();
+
+            function render() {
+                requestAnimationFrame(render);
+                var newTime = new Date().getTime() / 1000,
+                    deltaTime = newTime - (time || newTime);
+                time = newTime;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                var amount = particleRate * deltaTime;
+                for (var i = 0; i < amount; i++) {
+                    var pos = pointOnHeart(Math.PI - 2 * Math.PI * Math.random());
+                    var dir = pos.clone().length(settings.particles.velocity);
+                    particles.add(canvas.width / 2 + pos.x, canvas.height / 2 - pos.y, dir.x, -dir.y);
+                }
+                particles.update(deltaTime);
+                particles.draw(context, image);
+            }
+
+            function onResize() {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+            window.onresize = onResize;
+
+            setTimeout(function () {
+                onResize();
+                render();
+            }, 10);
+        })(document.getElementById('pinkboard'));
+
+        /* =============== 第零层：模拟星空（星流横移） =============== */
+        var starCv = document.getElementById('star');
+        var sctx = starCv.getContext('2d');
+        var starsFly = [];
+        function initStars() {
+            starCv.width = window.innerWidth;
+            starCv.height = window.innerHeight;
+            starsFly = [];
+            for (var i = 0; i < 99; i++) {
+                var s = Math.random() / 3;
+                starsFly.push({
+                    x: window.innerWidth / 2 + Math.random() * window.innerWidth / 2,
+                    y: Math.random() * window.innerHeight,
+                    r: 0.5 + s * 7,
+                    sp: 2 + Math.random() * 3
+                });
+            }
+        }
+        function drawStars() {
+            sctx.clearRect(0, 0, starCv.width, starCv.height);
+            sctx.fillStyle = 'rgba(255,255,255,0.9)';
+            for (var i = 0; i < starsFly.length; i++) {
+                var st = starsFly[i];
+                st.x -= st.sp;
+                if (st.x < -st.r * 2) {
+                    st.x = starCv.width / 2 + Math.random() * starCv.width / 2;
+                    st.y = Math.random() * starCv.height;
+                }
+                sctx.beginPath();
+                sctx.arc(st.x, st.y, st.r, 0, 6.28);
+                sctx.fill();
+            }
+            requestAnimationFrame(drawStars);
+        }
+        initStars();
+        drawStars();
+
+        /* =============== 最外围：全屏爱心流星光迹 + 甩花瓣 =============== */
+        var outCv = document.getElementById('outer');
+        var octx = outCv.getContext('2d');
+        var outW, outH, outCX, outCY;
+        var heartPts = [];
+        var sparkT = 0;
+        var trail = [];
+        var petals2 = [];
+        var TRAIL_LENGTH = 600, SPAWN_RATE = 0.06, PETAL_LIFE = 700, SPARK_SPEED = 0.0018;
+        var PETAL_MAX = (window.innerWidth < 700) ? 160 : 340;   // 手机降载
+
+        function buildHeartPath() {
+            outW = outCv.width = window.innerWidth;
+            outH = outCv.height = window.innerHeight;
+            outCX = outW / 2;
+            outCY = outH / 2;
+            var scale = Math.min(outW, outH) * 0.7 / 30;
+            heartPts = [];
+            for (var i = 0; i < 1500; i++) {
+                var t = 2 * Math.PI * i / 1500;
+                heartPts.push({
+                    x: outCX + 16 * Math.pow(Math.sin(t), 3) * scale,
+                    y: outCY - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale
+                });
+            }
+        }
+        function getPoint(t) {
+            var f = t * heartPts.length;
+            var i = Math.floor(f) % heartPts.length;
+            var fr = f - Math.floor(f);
+            var a = heartPts[i], b = heartPts[(i + 1) % heartPts.length];
+            return { x: a.x + (b.x - a.x) * fr, y: a.y + (b.y - a.y) * fr };
+        }
+
+        // 花瓣贴图：逐行复刻原版 create_petal_surface（同心圆填充+叶脉+亮边）
+        var PETAL_SIZES = [20, 30, 40, 50];
+        var PETAL_COLORS = [
+            [255,140,180],[255,160,200],[255,120,180],[255,100,160],
+            [255,180,210],[255,200,220],[255,130,170],[255,150,190]
+        ];
+        function petalSurface(size, rgb, alpha) {
+            var c = document.createElement('canvas');
+            c.width = c.height = size;
+            var g = c.getContext('2d');
+            var ctr = size / 2;
+            // 花瓣轮廓 r(θ)
+            var pts = [];
+            for (var i = 0; i < 100; i++) {
+                var th = 2 * Math.PI * i / 100;
+                var r = ctr * (0.4 + 0.6 * Math.cos(th)) * (1 + 0.25 * Math.sin(4 * th));
+                pts.push({ x: ctr + r * Math.cos(th), y: ctr + r * Math.sin(th) * 0.8 });
+            }
+            // 同心圆渐变填充 + 多边形遮罩
+            g.save();
+            g.beginPath();
+            g.moveTo(pts[0].x, pts[0].y);
+            for (var i2 = 1; i2 < pts.length; i2++) g.lineTo(pts[i2].x, pts[i2].y);
+            g.closePath();
+            g.clip();
+            for (var r2 = ctr; r2 > 0; r2--) {
+                var ratio = r2 / ctr;
+                var rr = Math.min(255, Math.round(rgb[0] * (0.9 + 0.3 * ratio)));
+                var gg = Math.min(255, Math.round(rgb[1] * (0.9 + 0.2 * ratio)));
+                var bb = Math.min(255, Math.round(rgb[2] * (0.9 + 0.2 * ratio)));
+                var aa = Math.round(alpha * ratio * 0.95);
+                g.fillStyle = 'rgba(' + rr + ',' + gg + ',' + bb + ',' + (aa / 255) + ')';
+                g.beginPath();
+                g.arc(ctr, ctr, r2, 0, 6.28);
+                g.fill();
+            }
+            g.restore();
+            // 叶脉：主脉 + 三对侧脉
+            var vein = 'rgba(' + Math.min(255, rgb[0] + 20) + ',' + Math.min(255, rgb[1] + 20) + ',' + Math.min(255, rgb[2]) + ',0.7)';
+            g.strokeStyle = vein;
+            g.lineCap = 'round';
+            var tip = pts[0];
+            var rootX = ctr, rootY = ctr + size * 0.2;
+            g.lineWidth = Math.max(1, size / 25);
+            g.beginPath();
+            g.moveTo(rootX, rootY);
+            g.lineTo(tip.x, tip.y);
+            g.stroke();
+            g.lineWidth = 1;
+            for (var i3 = 1; i3 < 4; i3++) {
+                g.beginPath();
+                g.moveTo(rootX, rootY);
+                g.lineTo(ctr - size * 0.1 * i3, ctr + size * 0.05 * i3);
+                g.stroke();
+                g.beginPath();
+                g.moveTo(rootX, rootY);
+                g.lineTo(ctr + size * 0.1 * i3, ctr + size * 0.05 * i3);
+                g.stroke();
+            }
+            // 亮边描线
+            g.strokeStyle = 'rgba(' + Math.min(255, rgb[0] + 30) + ',' + Math.min(255, rgb[1] + 30) + ',' + Math.min(255, rgb[2] + 10) + ',0.85)';
+            g.lineWidth = 1.5;
+            g.beginPath();
+            g.moveTo(pts[0].x, pts[0].y);
+            for (var i4 = 1; i4 < pts.length; i4++) g.lineTo(pts[i4].x, pts[i4].y);
+            g.closePath();
+            g.stroke();
+            return c;
+        }
+        // 立体小玫瑰：5 层花瓣错位叠成（复刻 create_rose_surface）
+        function roseSurface(size, rgb) {
+            var c = document.createElement('canvas');
+            c.width = c.height = size;
+            var g = c.getContext('2d');
+            var ctr = size / 2;
+            var layerNum = 5;
+            for (var layer = 0; layer < layerNum; layer++) {
+                var scale2 = 0.3 + 0.7 * (layer / layerNum);
+                var ps = Math.max(4, Math.round(size * scale2));
+                var petal = petalSurface(ps, rgb, 220 + layer * 10);
+                g.save();
+                g.translate(ctr, ctr);
+                g.rotate(layer * 36 * Math.PI / 180);
+                g.drawImage(petal, -ps / 2, -ps / 2);
+                g.restore();
+            }
+            return c;
+        }
+        // 60% 玫瑰 / 40% 单瓣（和原版同款随机），大屏等比放大
+        var PETALS = [];
+        var pxScale = Math.max(1, Math.min(window.innerWidth, window.innerHeight) / 800);
+        PETAL_SIZES.forEach(function (sz0) {
+            var sz = Math.round(sz0 * pxScale);
+            PETAL_COLORS.forEach(function (col) {
+                PETALS.push(Math.random() < 0.6 ? roseSurface(sz, col) : petalSurface(sz, col, 255));
+            });
+        });
+
+        // 光晕贴图
+        var glowTex = document.createElement('canvas');
+        glowTex.width = glowTex.height = 40;
+        (function () {
+            var g = glowTex.getContext('2d');
+            var grd = g.createRadialGradient(20, 20, 0, 20, 20, 20);
+            grd.addColorStop(0, 'rgba(255,240,200,1)');
+            grd.addColorStop(0.5, 'rgba(255,240,200,0.4)');
+            grd.addColorStop(1, 'rgba(255,240,200,0)');
+            g.fillStyle = grd;
+            g.fillRect(0, 0, 40, 40);
+        })();
+
+        function spawnPetal(pt, dx, dy) {
+            var md = Math.hypot(dx, dy) || 1;
+            var tx2 = dx / md, ty2 = dy / md;
+            var rx = pt.x - outCX, ry = pt.y - outCY;
+            var rd = Math.hypot(rx, ry) || 1;
+            rx /= rd; ry /= rd;
+            var outSp = 3.0 * (0.6 + Math.random() * 0.8);
+            var tanSp = 2.2 * (0.5 + Math.random() * 0.7);
+            var ra = Math.random() * 6.28, rs = 3.0 * (0.1 + Math.random() * 0.3);
+            petals2.push({
+                x: pt.x, y: pt.y,
+                vx: rx * outSp + tx2 * tanSp + Math.cos(ra) * rs,
+                vy: ry * outSp + ty2 * tanSp + Math.sin(ra) * rs,
+                img: PETALS[Math.floor(Math.random() * PETALS.length)],
+                angle: Math.random() * 360,
+                asp: (Math.random() - 0.5) * 2.4,
+                life: PETAL_LIFE
+            });
+        }
+
+        function drawOuter() {
+            octx.clearRect(0, 0, outW, outH);
+            if (heartPts.length) {
+                // 流星沿爱心轨迹前进
+                sparkT = (sparkT + SPARK_SPEED) % 1;
+                var pt = getPoint(sparkT);
+                var prev = trail.length ? trail[trail.length - 1] : pt;
+                trail.push({ x: pt.x, y: pt.y, life: TRAIL_LENGTH, dx: pt.x - prev.x, dy: pt.y - prev.y });
+                for (var i = trail.length - 1; i >= 0; i--) {
+                    if (--trail[i].life <= 0) trail.splice(i, 1);
+                }
+                // 光迹拖尾线
+                octx.lineCap = 'round';
+                for (var i2 = 0; i2 < trail.length - 1; i2++) {
+                    var a = trail[i2], b = trail[i2 + 1];
+                    var ratio = a.life / TRAIL_LENGTH;
+                    octx.strokeStyle = 'rgba(255,240,200,' + (80 * ratio / 255) + ')';
+                    octx.lineWidth = 15 * ratio;
+                    octx.beginPath();
+                    octx.moveTo(a.x, a.y);
+                    octx.lineTo(b.x, b.y);
+                    octx.stroke();
+                }
+                // 光晕 + 沿途甩花瓣（每个轨迹点都画光晕，和原版一致）
+                var glowStep = (window.innerWidth < 700) ? 2 : 1;
+                for (var i3 = 0; i3 < trail.length; i3 += glowStep) {
+                    var p3 = trail[i3];
+                    var ratio3 = p3.life / TRAIL_LENGTH;
+                    var gr = 20 * ratio3;
+                    if (gr > 1) {
+                        octx.globalAlpha = 50 * ratio3 / 255;
+                        octx.drawImage(glowTex, p3.x - gr, p3.y - gr, gr * 2, gr * 2);
+                    }
+                    if (petals2.length < PETAL_MAX && Math.random() < SPAWN_RATE * ratio3) spawnPetal(p3, p3.dx, p3.dy);
+                }
+                octx.globalAlpha = 1;
+                // 流星核心
+                octx.globalAlpha = 0.12;
+                octx.drawImage(glowTex, pt.x - 20, pt.y - 20, 40, 40);
+                octx.globalAlpha = 1;
+                octx.fillStyle = 'rgb(255,240,200)';
+                octx.beginPath();
+                octx.arc(pt.x, pt.y, 6, 0, 6.28);
+                octx.fill();
+                octx.fillStyle = '#fff';
+                octx.beginPath();
+                octx.arc(pt.x - 2, pt.y - 2, 3, 0, 6.28);
+                octx.fill();
+            }
+            // 花瓣
+            for (var i4 = petals2.length - 1; i4 >= 0; i4--) {
+                var p4 = petals2[i4];
+                p4.x += p4.vx;
+                p4.y += p4.vy;
+                p4.angle += p4.asp;
+                if (--p4.life <= 0) { petals2.splice(i4, 1); continue; }
+                octx.globalAlpha = p4.life / PETAL_LIFE;
+                octx.save();
+                octx.translate(p4.x, p4.y);
+                octx.rotate(p4.angle * Math.PI / 180);
+                octx.drawImage(p4.img, -p4.img.width / 2, -p4.img.height / 2);
+                octx.restore();
+            }
+            octx.globalAlpha = 1;
+            requestAnimationFrame(drawOuter);
+        }
+        buildHeartPath();
+        drawOuter();
+        window.addEventListener('resize', function () {
+            initStars();
+            buildHeartPath();
+        });
+
+        /* 中央文字 */
+        document.querySelector('#child h4').textContent = CENTER_TEXT;
+    </script>
+</body>
+</html>
