@@ -422,7 +422,7 @@
         var trail = [];
         var petals2 = [];
         var TRAIL_LENGTH = 600, SPAWN_RATE = 0.06, PETAL_LIFE = 700, SPARK_SPEED = 0.0018;
-        var PETAL_MAX = (window.innerWidth < 700) ? 600 : 1600;   // 手机降载
+        var PETAL_MAX = (window.innerWidth < 700) ? 600 : 1200;   // 手机降载
 
         function buildHeartPath() {
             outW = outCv.width = window.innerWidth;
@@ -430,12 +430,31 @@
             outCX = outW / 2;
             outCY = outH / 2;
             var scale = Math.min(outW, outH) * 0.7 / 30;
-            heartPts = [];
+            var raw = [];
             for (var i = 0; i < 1500; i++) {
                 var t = 2 * Math.PI * i / 1500;
-                heartPts.push({
+                raw.push({
                     x: outCX + 16 * Math.pow(Math.sin(t), 3) * scale,
                     y: outCY - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale
+                });
+            }
+            // 弧长均匀重采样（复刻原版 resample_path_evenly）：流星匀速画心，花瓣跟着画心均匀甩出
+            var arc = [0];
+            for (var j = 1; j < raw.length; j++) {
+                arc.push(arc[j - 1] + Math.hypot(raw[j].x - raw[j - 1].x, raw[j].y - raw[j - 1].y));
+            }
+            var total = arc[arc.length - 1];
+            heartPts = [];
+            var idx = 0;
+            for (var k = 0; k < 1500; k++) {
+                var target = (k / 1500) * total;
+                while (idx < arc.length - 1 && arc[idx] < target) idx++;
+                if (idx === 0) { heartPts.push(raw[0]); continue; }
+                var seg = arc[idx] - arc[idx - 1];
+                var f = seg > 0 ? (target - arc[idx - 1]) / seg : 0;
+                heartPts.push({
+                    x: raw[idx - 1].x + (raw[idx].x - raw[idx - 1].x) * f,
+                    y: raw[idx - 1].y + (raw[idx].y - raw[idx - 1].y) * f
                 });
             }
         }
