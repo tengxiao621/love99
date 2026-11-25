@@ -421,7 +421,7 @@
         var sparkT = 0;
         var trail = [];
         var petals2 = [];
-        var TRAIL_LENGTH = 600, SPAWN_RATE = 0.06, PETAL_LIFE = 700, SPARK_SPEED = 0.0018;
+        var TRAIL_LENGTH = 300, SPAWN_RATE = 0.12, PETAL_LIFE = 350, SPARK_SPEED = 0.0036;  // 网页60fps，原py为120fps，每帧参数×2换算
         var PETAL_MAX = (window.innerWidth < 700) ? 600 : 1200;   // 手机降载
 
         function buildHeartPath() {
@@ -583,16 +583,16 @@
             var rx = pt.x - outCX, ry = pt.y - outCY;
             var rd = Math.hypot(rx, ry) || 1;
             rx /= rd; ry /= rd;
-            var outSp = 3.0 * (0.6 + Math.random() * 0.8);
-            var tanSp = 2.2 * (0.5 + Math.random() * 0.7);
-            var ra = Math.random() * 6.28, rs = 3.0 * (0.1 + Math.random() * 0.3);
+            var outSp = 6.0 * (0.6 + Math.random() * 0.8);   // 原py 3.0@120fps，60fps下×2
+            var tanSp = 4.4 * (0.5 + Math.random() * 0.7);   // 原 2.2
+            var ra = Math.random() * 6.28, rs = 6.0 * (0.1 + Math.random() * 0.3);
             petals2.push({
                 x: pt.x, y: pt.y,
                 vx: rx * outSp + tx2 * tanSp + Math.cos(ra) * rs,
                 vy: ry * outSp + ty2 * tanSp + Math.sin(ra) * rs,
                 img: PETALS[Math.floor(Math.random() * PETALS.length)],
                 angle: Math.random() * 360,
-                asp: (Math.random() - 0.5) * 2.4,
+                asp: (Math.random() - 0.5) * 4.8,   // 原 ±1.2@120fps
                 life: PETAL_LIFE
             });
         }
@@ -630,6 +630,7 @@
                         octx.globalAlpha = 50 * ratio3 / 255;
                         octx.drawImage(glowTex, p3.x - gr, p3.y - gr, gr * 2, gr * 2);
                     }
+                    // 和原版一致：整条拖尾按剩余寿命加权生成
                     if (petals2.length < PETAL_MAX && Math.random() < SPAWN_RATE * ratio3) spawnPetal(p3, p3.dx, p3.dy);
                 }
                 octx.globalAlpha = 1;
