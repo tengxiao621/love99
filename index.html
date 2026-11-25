@@ -422,7 +422,7 @@
         var trail = [];
         var petals2 = [];
         var TRAIL_LENGTH = 600, SPAWN_RATE = 0.06, PETAL_LIFE = 700, SPARK_SPEED = 0.0018;
-        var PETAL_MAX = (window.innerWidth < 700) ? 160 : 340;   // 手机降载
+        var PETAL_MAX = (window.innerWidth < 700) ? 200 : 550;   // 手机降载
 
         function buildHeartPath() {
             outW = outCv.width = window.innerWidth;
@@ -627,9 +627,19 @@
                 octx.arc(pt.x - 2, pt.y - 2, 3, 0, 6.28);
                 octx.fill();
             }
+            // 持续花瓣生成器：不依赖流星轨迹，每帧从心形轨迹随机位置撒花，保证花瓣一直存在
+            var spawnCount = (window.innerWidth < 700) ? 1 : 3;
+            for (var i5 = 0; i5 < spawnCount; i5++) {
+                if (petals2.length < PETAL_MAX && heartPts.length) {
+                    var rp = heartPts[Math.floor(Math.random() * heartPts.length)];
+                    spawnPetal(rp, rp.x - outCX, rp.y - outCY);
+                }
+            }
             // 花瓣
             for (var i4 = petals2.length - 1; i4 >= 0; i4--) {
                 var p4 = petals2[i4];
+                p4.vx *= 0.982;   // 阻力：花瓣减速漂浮在爱心周围，不会一闪冲出屏幕
+                p4.vy *= 0.982;
                 p4.x += p4.vx;
                 p4.y += p4.vy;
                 p4.angle += p4.asp;
